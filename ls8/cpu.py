@@ -11,10 +11,8 @@ class CPU:
         self.reg = [0] * 8  # 8 general 8 bit registers
         # ram is the computer's memory, can hold 256 bytes of RAM total
         self.ram = [0] * 256
-        self.pc = 0  # address of the currently executing instruction
-        self.ir = 0  # Instruction Register, contains a copy of the currently executing instruction
-        self.mar = 0  # Memory Address Register, holds the memory address we're reading or writing
-        self.mdr = 0  # Memory Data Register, holds the value to write or the value just read
+        self.PC = 0  # address of the currently executing instruction
+        self.FL = [0] * 8  # 8-bit Flags register
 
     def load(self):
         """Load a program into memory."""
@@ -46,11 +44,17 @@ class CPU:
         else:
             raise Exception("Unsupported ALU operation")
 
-    def ram_read(self, address):
-        self.ram[address]
+    def ram_read(self, MAR):
+        # MAR (Memory Address Register) contains the address being read from
+        return self.ram[MAR]
 
-    def ram_write(self, value, address):
-        self.ram[address] = value
+    def ram_write(self, MDR, MAR):
+        # MAR (Memory Address Register) contains the address being written to
+        # MDR (Memory Data Register) contains the data to write
+        self.ram[MAR] = MDR
+
+    def hlt(self):
+        sys.exit()
 
     def trace(self):
         """
@@ -59,12 +63,12 @@ class CPU:
         """
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
-            self.pc,
+            self.PC,
             # self.fl,
             # self.ie,
-            self.ram_read(self.pc),
-            self.ram_read(self.pc + 1),
-            self.ram_read(self.pc + 2)
+            self.ram_read(self.PC),
+            self.ram_read(self.PC + 1),
+            self.ram_read(self.PC + 2)
         ), end='')
 
         for i in range(8):
@@ -74,4 +78,23 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        # The instruction pointed to by the PC is fetched from RAM, decoded, and executed
+        while True:
+            # read the memory address that's stored in register PC and store it in IR
+            # IR = Instruction Register
+            IR = self.ram[self.PC]
+            # use ram_read() to read the bytes at PC+1 and PC+2 into variables operand_a and operand_b
+            # in case the instruction needs them
+            operand_a = self.ram_read(self.PC + 1)
+            operand_b = self.ram_read(self.PC + 2)
+
+            if IR == 0b00000001:  # HLT: Halt the CPU and exit the emulator
+                sys.exit()
+            elif IR == 0b10000010:  # LDI: Set the value of a register to an integer
+                self.reg[self.ram[self.PC + 1]] = self.ram[self.PC + 2]
+                self.PC += 3
+            elif IR == 0b01000111:  # PRN: Print numeric value stored in the given register
+                print(self.reg[self.ram[self.PC + 1]])
+                self.PC += 2
+
+            self.PC += 1
