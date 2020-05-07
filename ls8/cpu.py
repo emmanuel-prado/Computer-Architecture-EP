@@ -8,8 +8,13 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        registers = [0] * 8
-        memory = [0] * 16
+        self.reg = [0] * 8  # 8 general 8 bit registers
+        # ram is the computer's memory, can hold 256 bytes of RAM total
+        self.ram = [0] * 256
+        self.pc = 0  # address of the currently executing instruction
+        self.ir = 0  # Instruction Register, contains a copy of the currently executing instruction
+        self.mar = 0  # Memory Address Register, holds the memory address we're reading or writing
+        self.mdr = 0  # Memory Data Register, holds the value to write or the value just read
 
     def load(self):
         """Load a program into memory."""
@@ -40,6 +45,12 @@ class CPU:
         # elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
+
+    def ram_read(self, address):
+        self.ram[address]
+
+    def ram_write(self, value, address):
+        self.ram[address] = value
 
     def trace(self):
         """
