@@ -78,8 +78,12 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+        HLT = 0b00000001
+        LDI = 0b10000010
+        PRN = 0b01000111
         # The instruction pointed to by the PC is fetched from RAM, decoded, and executed
         while True:
+            self.trace()
             # read the memory address that's stored in register PC and store it in IR
             # IR = Instruction Register
             IR = self.ram[self.PC]
@@ -88,13 +92,14 @@ class CPU:
             operand_a = self.ram_read(self.PC + 1)
             operand_b = self.ram_read(self.PC + 2)
 
-            if IR == 0b00000001:  # HLT: Halt the CPU and exit the emulator
+            if IR == HLT:  # Halt the CPU and exit the emulator
                 sys.exit()
-            elif IR == 0b10000010:  # LDI: Set the value of a register to an integer
-                self.reg[self.ram[self.PC + 1]] = self.ram[self.PC + 2]
+            elif IR == LDI:  # Set the value of a register to an integer
+                address = self.ram[self.PC + 1]
+                integer = self.ram[self.PC + 2]
+                self.reg[address] = integer
                 self.PC += 3
-            elif IR == 0b01000111:  # PRN: Print numeric value stored in the given register
-                print(self.reg[self.ram[self.PC + 1]])
+            elif IR == PRN:  # Print numeric value stored in the given register
+                address = self.ram[self.PC + 1]
+                print(self.reg[address])
                 self.PC += 2
-
-            self.PC += 1
