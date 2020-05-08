@@ -13,6 +13,31 @@ class CPU:
         self.ram = [0] * 256
         self.PC = 0  # address of the currently executing instruction
         self.FL = [0] * 8  # 8-bit Flags register
+        self.dispatch_table = {"1": self.handle_HLT,
+                               "130": self.handle_LDI,
+                               "71": self.handle_PRN,
+                               "160": self.handle_ADD,
+                               "162": self.handle_MUL
+                               }
+
+    def handle_HLT(self, op_a, op_b):
+        sys.exit(0)
+
+    def handle_LDI(self, op_a, op_b):
+        self.reg[op_a] = op_b
+        self.PC += 3
+
+    def handle_PRN(self, op_a, op_b):
+        print(self.reg[op_a])
+        self.PC += 2
+
+    def handle_ADD(self, op_a, op_b):
+        self.alu("ADD", op_a, op_b)
+        self.PC += 3
+
+    def handle_MUL(self, op_a, op_b):
+        self.alu("MUL", op_a, op_b)
+        self.PC += 3
 
     def load(self):
         """Load a program into memory."""
@@ -80,15 +105,8 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        HLT = 0b00000001  # Halt the CPU and exit the emulator
-        LDI = 0b10000010  # Set the value of a register to an integer
-        PRN = 0b01000111  # Print numeric value stored in the given register
-        # ALU Ops
-        ADD = 0b10100000  # Add the value in two registers and store the result in registerA
-        # Multiply the values in two registers together and store the result in registerA
-        MUL = 0b10100010
         while True:
-            self.trace()
+            # self.trace()
             # The instruction pointed to by the PC is fetched from RAM, decoded, and executed
             # IR = Instruction Register
             IR = self.ram[self.PC]
@@ -97,20 +115,4 @@ class CPU:
             operand_a = self.ram_read(self.PC + 1)
             operand_b = self.ram_read(self.PC + 2)
 
-            if IR == HLT:
-                sys.exit(0)
-            elif IR == ADD:
-                self.alu("ADD", operand_a, operand_b)
-                self.PC += 3
-            elif IR == MUL:
-                self.alu("MUL", operand_a, operand_b)
-                self.PC += 3
-            elif IR == LDI:
-                address = operand_a
-                integer = operand_b
-                self.reg[address] = integer
-                self.PC += 3
-            elif IR == PRN:
-                address = operand_a
-                print(self.reg[address])
-                self.PC += 2
+            self.dispatch_table[str(IR)](operand_a, operand_b)
