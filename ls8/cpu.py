@@ -20,26 +20,28 @@ class CPU:
         address = 0
 
         # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        try:
+            with open(sys.argv[1]) as f:
+                for line in f:
+                    if line == "\n":
+                        continue
+                    else:
+                        line_split = line.split("#")
+                        string = line_split[0].strip()
+                        instruction = int(string, 2)
+                        self.ram[address] = instruction
+                        address += 1
+        except:
+            raise ValueError("Please load a valid program")
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "MUL":
+            value = self.reg[reg_a] * self.reg[reg_b]
+            self.reg[reg_a] = value
         # elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -78,13 +80,16 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        HLT = 0b00000001
-        LDI = 0b10000010
-        PRN = 0b01000111
-        # The instruction pointed to by the PC is fetched from RAM, decoded, and executed
+        HLT = 0b00000001  # Halt the CPU and exit the emulator
+        LDI = 0b10000010  # Set the value of a register to an integer
+        PRN = 0b01000111  # Print numeric value stored in the given register
+        # ALU Ops
+        ADD = 0b10100000  # Add the value in two registers and store the result in registerA
+        # Multiply the values in two registers together and store the result in registerA
+        MUL = 0b10100010
         while True:
             self.trace()
-            # read the memory address that's stored in register PC and store it in IR
+            # The instruction pointed to by the PC is fetched from RAM, decoded, and executed
             # IR = Instruction Register
             IR = self.ram[self.PC]
             # use ram_read() to read the bytes at PC+1 and PC+2 into variables operand_a and operand_b
@@ -92,14 +97,20 @@ class CPU:
             operand_a = self.ram_read(self.PC + 1)
             operand_b = self.ram_read(self.PC + 2)
 
-            if IR == HLT:  # Halt the CPU and exit the emulator
-                sys.exit()
-            elif IR == LDI:  # Set the value of a register to an integer
-                address = self.ram[self.PC + 1]
-                integer = self.ram[self.PC + 2]
+            if IR == HLT:
+                sys.exit(0)
+            elif IR == ADD:
+                self.alu("ADD", operand_a, operand_b)
+                self.PC += 3
+            elif IR == MUL:
+                self.alu("MUL", operand_a, operand_b)
+                self.PC += 3
+            elif IR == LDI:
+                address = operand_a
+                integer = operand_b
                 self.reg[address] = integer
                 self.PC += 3
-            elif IR == PRN:  # Print numeric value stored in the given register
-                address = self.ram[self.PC + 1]
+            elif IR == PRN:
+                address = operand_a
                 print(self.reg[address])
                 self.PC += 2
