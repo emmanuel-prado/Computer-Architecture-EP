@@ -68,6 +68,10 @@ but you'll have to implement those three above instructions first!
   CPU Memory
   ram_read()
   ram_write()
+  core of CPU run()
+  HLT
+  LDI
+  PRN
 
 - Read this whole file.
 - Skim the spec.
