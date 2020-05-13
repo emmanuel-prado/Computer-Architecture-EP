@@ -12,12 +12,15 @@ class CPU:
         # ram is the computer's memory, can hold 256 bytes of RAM total
         self.ram = [0] * 256
         self.PC = 0  # address of the currently executing instruction
-        self.FL = [0] * 8  # 8-bit Flags register
+        self.SP = 243  # Stack Pointer
+        self.reg[7] = self.SP  # Stack Pointer in register
         self.dispatch_table = {"1": self.handle_HLT,
                                "130": self.handle_LDI,
                                "71": self.handle_PRN,
                                "160": self.handle_ADD,
-                               "162": self.handle_MUL
+                               "162": self.handle_MUL,
+                               "69": self.handle_PUSH,
+                               "70": self.handle_POP
                                }
 
     def handle_HLT(self, op_a, op_b):
@@ -38,6 +41,16 @@ class CPU:
     def handle_MUL(self, op_a, op_b):
         self.alu("MUL", op_a, op_b)
         self.PC += 3
+
+    def handle_PUSH(self, op_a, op_b):
+        self.SP -= 1
+        self.ram[self.SP] = self.reg[op_a]
+        self.PC += 2
+
+    def handle_POP(self, op_a, op_b):
+        self.reg[op_a] = self.ram[self.SP]
+        self.SP += 1
+        self.PC += 2
 
     def load(self):
         """Load a program into memory."""
