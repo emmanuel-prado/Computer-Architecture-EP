@@ -20,7 +20,9 @@ class CPU:
                                "160": self.handle_ADD,
                                "162": self.handle_MUL,
                                "69": self.handle_PUSH,
-                               "70": self.handle_POP
+                               "70": self.handle_POP,
+                               "80": self.handle_CALL,
+                               "17": self.handle_RET
                                }
 
     def handle_HLT(self, op_a, op_b):
@@ -52,6 +54,15 @@ class CPU:
         self.SP += 1
         self.PC += 2
 
+    def handle_CALL(self, op_a, op_b):
+        self.PC += 2
+        self.ram[self.SP] = self.PC
+        self.PC = self.reg[op_a]
+
+    def handle_RET(self, op_a, op_b):
+        self.PC = self.ram[self.SP]
+        self.SP += 1
+
     def load(self):
         """Load a program into memory."""
 
@@ -65,6 +76,8 @@ class CPU:
                         continue
                     else:
                         line_split = line.split("#")
+                        if line_split[0] == '':
+                            continue
                         string = line_split[0].strip()
                         instruction = int(string, 2)
                         self.ram[address] = instruction
@@ -127,5 +140,4 @@ class CPU:
             # in case the instruction needs them
             operand_a = self.ram_read(self.PC + 1)
             operand_b = self.ram_read(self.PC + 2)
-
             self.dispatch_table[str(IR)](operand_a, operand_b)
